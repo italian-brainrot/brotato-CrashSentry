@@ -1,0 +1,112 @@
+{
+	"name": "CrashSentry",
+	"namespace": "dbg",
+	"version_number": "1.2.2",
+	"description": "Debug toolkit for mod authors: crash-proof flight recorder, post-mortem reports, engine-log tailing with per-mod attribution, freed-reference watchdog, startup step breadcrumbs, and it stops the game from silently disabling all your mods.",
+	"website_url": "",
+	"dependencies": [],
+	"extra": {
+		"godot": {
+			"authors": [
+				"qq"
+			],
+			"optional_dependencies": [],
+			"compatible_game_version": [
+				"1.2.0.1",
+				"1.2.0.0"
+			],
+			"compatible_mod_loader_version": [
+				"6.0.0",
+				"6.1.0",
+				"6.2.0",
+				"6.3.0"
+			],
+			"incompatibilities": [],
+			"load_before": [],
+			"tags": [
+				"debug",
+				"logging",
+				"crash",
+				"tools",
+				"qa"
+			],
+			"description_rich": "[b]CrashSentry[/b] keeps a crash-resistant [i]flight recorder[/i] (user://logs/sentry/trail.log) so that even a hard crash leaves a trail of what the game was doing: scene, wave, run snapshot, node counts, memory and the last engine errors with per-mod attribution. When a session ends without shutting down cleanly it writes a full post-mortem report into user://logs/sentry/reports/.\n\nIn-game hotkeys: [b]F8[/b] toggle overlay, [b]F9[/b] dump current state, [b]F10[/b] copy diagnostics to clipboard, [b]F7[/b] open the reports folder.",
+			"config_schema": {
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"title": "CrashSentry config",
+				"description": "CrashSentry config",
+				"type": "object",
+				"properties": {
+					"boost_mod_log_level": {
+						"description": "Force the ModLoader log level to DEBUG so that other mods' debug messages are written to modloader.log. Equivalent to launching the game with -vvv.",
+						"type": "boolean",
+						"default": true
+					},
+					"tail_engine_log": {
+						"description": "Follow user://logs/godot.log and copy every SCRIPT ERROR / ERROR / WARNING into the flight recorder, tagged with the mod that owns the file mentioned in the line.",
+						"type": "boolean",
+						"default": true
+					},
+					"watchdog_thread": {
+						"description": "Write the flight recorder from a background thread so a frozen main loop still gets a FREEZE marker and a flushed trail. Disable if the mod itself causes problems.",
+						"type": "boolean",
+						"default": true
+					},
+					"freeze_ms": {
+						"description": "How long the main loop must be unresponsive before the watchdog writes a FREEZE entry (milliseconds). Ignored during the first 15 seconds of a session.",
+						"type": "integer",
+						"minimum": 500,
+						"maximum": 60000,
+						"default": 5000
+					},
+					"frame_hitch_ms": {
+						"description": "Log a HITCH entry when a single frame takes longer than this (milliseconds). 0 disables.",
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 10000,
+						"default": 500
+					},
+					"freed_watchdog": {
+						"description": "Track objects registered with CrashSentry.watch() and log when they disappear, including how many live signal connections they had. Helps find 'previously freed instance' crashes.",
+						"type": "boolean",
+						"default": true
+					},
+					"overlay_enabled": {
+						"description": "Show the diagnostics overlay at startup (toggle with F8 at any time).",
+						"type": "boolean",
+						"default": false
+					},
+					"report_errors_in_overlay": {
+						"description": "Show the last captured engine errors inside the overlay.",
+						"type": "boolean",
+						"default": true
+					},
+					"alert_on_crash_found": {
+						"description": "After a session that did not shut down cleanly, flash a banner with the report location at startup.",
+						"type": "boolean",
+						"default": true
+					},
+					"memory_log_seconds": {
+						"description": "Write a MEM entry (memory + node counts) every N seconds. 0 disables.",
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 600,
+						"default": 20
+					},
+					"keep_mods_enabled": {
+						"type": "boolean",
+						"default": true,
+						"title": "Keep mods enabled",
+						"description": "Brotato's crash reporter switches every mod off when the newest rotated engine log has an ERROR: line next to the text 'mods-unpacked' (a mod that merely fails to compile trips this). This renames such an already-rotated log into logs/sentry/evidence/ instead of deleting it, so the next launch has nothing to blame."
+					},
+					"sanitize_engine_log": {
+						"type": "boolean",
+						"default": true,
+						"title": "Mask mod paths in the live engine log",
+						"description": "Root-cause fix for the same problem: every already-read occurrence of 'mods-unpacked' in the live logs is overwritten in place with 'mods_unpacked' (same length, so the engine's write cursor and the file size stay valid). When the engine rotates the log at the next startup the game's crash reporter finds nothing to blame and your mods stay enabled. The original text is preserved in logs/sentry/trail.log, which keeps the per-mod error attribution."
+					}
+				}
+			}
+		}
+	}
+}
